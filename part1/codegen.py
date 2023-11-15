@@ -3,9 +3,11 @@ elements of a std::vector.
 
 In particular, it generates three files:
 
-1. vec_test_runtime.cpp, which does this computation at runtime
-2. vec_test_constexpr.cpp, which does this computation possibly at compile time
-3. vec_test_consteval.cpp, which does this computation at compile time
+1. vectest_{num_elems}_runtime.cpp, which does this computation at runtime
+2. vectest_{num_elems}_constexpr.cpp, which does this computation possibly at
+   compile time
+3. vectest_{num_elems}_consteval.cpp, which does this computation at compile
+   time
 
 Each file roughly follows the following structure:
 
