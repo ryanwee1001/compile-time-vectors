@@ -10,7 +10,7 @@ Each file roughly follows the following structure:
 
     <boilerplate_head>
     <compiletime_body> OR <runtime_body>
-    <boilerplate_end>
+    <boilerplate_tail>
 
 We pre-generate this code, because std::random_device is a runtime random
 number generator. To write a constexpr or consteval function, we need to bake
