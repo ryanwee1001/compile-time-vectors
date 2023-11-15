@@ -40,7 +40,7 @@ struct SimpleSum {
 template <Arithmetic T>
 struct SimpleProd {
     constexpr T operator()(const std::vector<T>& v) {
-        return std::accumulate(v.begin(), v.end(), static_cast<T>(1), 
+        return std::accumulate(v.begin(), v.end(), static_cast<T>(1),
             [](const T& accum, const T& elem) -> T {
                 return (accum * elem) % static_cast<T>(1e9);
             }
@@ -51,13 +51,13 @@ struct SimpleProd {
 // Populates a std::vector with the same elements used to populate the
 // std::vector in the compile-time code.
 //
-// The repeated statements are ugly, but we do this instead of using a 
+// The repeated statements are ugly, but we do this instead of using a
 // std::random_device and a loop so that we can populate the std::vector with
 // the same elements used in the compile-time code.
 template <typename T>
 std::vector<T> populateVec() {
     std::vector<T> v;
-    v.emplace_back(97030877);
+    v.emplace_back(-861940221);
 
     return v;
 }
@@ -91,7 +91,7 @@ void runTestCase(int numRuns, std::string_view testName) {
 
 int main() {
     using namespace std::literals;
-    
+
     int numRuns = 1;
     runTestCase<SimpleSum<long long>, long long>(numRuns, "SimpleSum"sv);
     runTestCase<SimpleProd<long long>, long long>(numRuns, "SimpleProd"sv);

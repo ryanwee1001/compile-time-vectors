@@ -40,7 +40,7 @@ struct SimpleSum {
 template <Arithmetic T>
 struct SimpleProd {
     constexpr T operator()(const std::vector<T>& v) {
-        return std::accumulate(v.begin(), v.end(), static_cast<T>(1), 
+        return std::accumulate(v.begin(), v.end(), static_cast<T>(1),
             [](const T& accum, const T& elem) -> T {
                 return (accum * elem) % static_cast<T>(1e9);
             }
@@ -64,7 +64,7 @@ constexpr  T doComputation() {
     // individual element rather than using a std::random_device and a loop so
     // that the function can be executed at compile time.
     std::vector<T> v;
-    v.emplace_back(97030877);
+    v.emplace_back(-861940221);
 
 
     return Func()(v);
@@ -87,7 +87,7 @@ void runTestCase(int numRuns, std::string_view testName) {
 
 int main() {
     using namespace std::literals;
-    
+
     int numRuns = 1;
     runTestCase<SimpleSum<long long>, long long>(numRuns, "SimpleSum"sv);
     runTestCase<SimpleProd<long long>, long long>(numRuns, "SimpleProd"sv);
