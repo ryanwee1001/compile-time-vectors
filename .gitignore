@@ -3,6 +3,7 @@ vectest*.cpp
 
 # Executable
 a.out
+Main
 
 # VSCode
 .vscode/
