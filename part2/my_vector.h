@@ -10,7 +10,12 @@
 #include <format>
 #include <iterator>
 
-template <typename T, std::size_t N>
+// TODO: define veclike concept
+// template <typename T, typename U>
+// concept VecLike = std::is_same_v<T, std::vector<U>> || 
+//         std::is_same_v<T, MyVec<U>>;
+
+template <class T, std::size_t N>
 class MyVec {
 public:
     // Member types
@@ -19,19 +24,46 @@ public:
     using reference = value_type&;
     using const_reference = const value_type&;
     using iterator = T*;
-    using const_iterator = T * const;
+    using const_iterator = const T*;
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-    // Initializers
+    // Constructors TODO
     constexpr MyVec() : arr() {}
-    constexpr explicit MyVec(size_type count) : arr() {
-        if (count > cap)
-            throw std::length_error("Cannot exceed preset capacity.");
+
+    // TO TEST
+    constexpr MyVec(size_type count, const T& value) : arr() {
+        _check_length(count);
+        for (size_type i = 0; i < count; ++i)
+            arr[i] = value;
         sz = count;
     }
-    // TODO
-    // constexpr MyVec(const std::initializer_list<Elem>& i_list);
+
+    constexpr explicit MyVec(size_type count) : arr() {
+        _check_length(count);
+        for (size_type i = 0; i < count; ++i)
+            arr[i] = T();
+        sz = count;
+    }
+
+    template<std::input_iterator InputIt>
+    constexpr MyVec(InputIt first, InputIt last) { insert(0, first, last); }
+
+    constexpr MyVec(const MyVec<T,N>& other) {
+        arr = other.arr;
+        sz = other.sz;
+    }
+
+    constexpr MyVec(MyVec<T,N>&& other) noexcept {
+        swap(other);
+    }
+
+    constexpr MyVec(std::initializer_list<T> init) {
+        sz = init.size();
+        int i = 0;
+        for (auto it = init.begin(); it != init.end(); ++it)
+            arr[i++] = *it;
+    }
     
     // Element access
     constexpr reference at(size_type pos) {
@@ -68,13 +100,13 @@ public:
     constexpr const_reverse_iterator crend() const noexcept { return arr.crend(); }
 
     // Capacity
+    // Not implemented: reserve()
     [[nodiscard]] constexpr bool empty() const noexcept { return sz == 0; }
     constexpr size_type size() const noexcept { return sz; }
     constexpr size_type max_size() const noexcept { return cap; }
     constexpr size_type capacity() const noexcept { return cap; }
 
     // Modifiers
-    // TODO
     constexpr void clear() noexcept { sz = 0; }
     constexpr iterator insert(const_iterator pos, const T& value) {
         size_type pos_idx = pos - begin();
@@ -95,7 +127,6 @@ public:
     }
 
     constexpr iterator insert(const_iterator pos, size_type count, const T& value) {
-        if (count == 0) return pos;
         size_type pos_idx = pos - begin();
         _insert_check(pos_idx, count);
         _shift_n_forward(pos_idx, count);
@@ -107,7 +138,6 @@ public:
 
     template<std::input_iterator InputIt>
     constexpr iterator insert(const_iterator pos, InputIt first, InputIt last) {
-        if (first == last) return pos;
         size_type pos_idx = pos - begin();
         size_type count = 0;
         for (InputIt it = first; it != last; ++it)
@@ -122,7 +152,6 @@ public:
     }
 
     constexpr iterator insert(const_iterator pos, std::initializer_list<T> ilist) {
-        if (ilist.size() == 0) return pos;
         size_type pos_idx = pos - begin();
         size_type count = ilist.size();
         _insert_check(pos_idx, count);
@@ -144,17 +173,16 @@ public:
         return begin() + pos_idx;
     }
 
-    // TO TEST
     constexpr iterator erase(const_iterator pos) {
         size_type pos_idx = pos - begin();
         _shift_n_backward(pos_idx, 1);
-        --sz;        
+        --sz;
         return begin() + pos_idx;
     }
 
     constexpr iterator erase(const_iterator first, const_iterator last) {
         size_type pos_idx = first - begin();
-        size_type count = last - first + 1;
+        size_type count = last - first;
         _shift_n_backward(pos_idx, count);
         sz -= count;
         return begin() + pos_idx;
@@ -168,6 +196,29 @@ public:
         _check_length(sz + 1);
         arr[sz++] = T(std::forward<Args>(args)...);
         return arr[sz];
+    }
+
+    constexpr void pop_back() { --sz; }
+
+    constexpr void resize(size_type count) {
+        _check_length(count);
+        if (sz < count)
+            for (size_type i = sz; i < count; ++i)
+                arr[i] = T();
+        sz = count;    
+    }
+
+    constexpr void resize(size_type count, const value_type& value) {
+        _check_length(count);
+        if (sz < count)
+            for (size_type i = sz; i < count; ++i)
+                arr[i] = value;
+        sz = count;
+    }
+
+    constexpr void swap(MyVec<T, N>& other) noexcept {
+        std::swap(arr, other.arr);
+        std::swap(sz, other.sz);
     }
 
 private:
@@ -201,8 +252,21 @@ private:
     }
 };
 
-// template <typename T, typename U>
-// concept VecLike = std::is_same_v<T, std::vector<U>> || 
-//         std::is_same_v<T, MyVec<U>>;
+// Non-member functions
+// Not implemented: erase, erase_if
+template<class T, std::size_t N>
+constexpr auto operator<=>(const MyVec<T,N>& lhs, const MyVec<T,N>& rhs) {
+    return std::lexicographical_compare_three_way(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+}
+
+template<class T, std::size_t N>
+constexpr bool operator==(const MyVec<T,N>& lhs, const MyVec<T,N>& rhs) {
+    if (lhs.size() != rhs.size())
+        return false;
+    for (int i = 0; i < lhs.size(); ++i)
+        if (lhs[i] != rhs[i])
+            return false;
+    return true;
+}
 
 #endif  // MY_VECTOR_H_
