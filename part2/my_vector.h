@@ -28,10 +28,9 @@ public:
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-    // Constructors TODO
+    // Constructors
     constexpr MyVec() : arr() {}
 
-    // TO TEST
     constexpr MyVec(size_type count, const T& value) : arr() {
         _check_length(count);
         for (size_type i = 0; i < count; ++i)
