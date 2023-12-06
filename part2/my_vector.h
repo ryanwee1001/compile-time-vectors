@@ -9,11 +9,7 @@
 #include <utility>
 #include <format>
 #include <iterator>
-
-// TODO: define veclike concept
-// template <typename T, typename U>
-// concept VecLike = std::is_same_v<T, std::vector<U>> || 
-//         std::is_same_v<T, MyVec<U>>;
+#include <concepts>
 
 template <class T, std::size_t N>
 class MyVec {
@@ -21,6 +17,7 @@ public:
     // Member types
     using value_type = T;
     using size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
     using reference = value_type&;
     using const_reference = const value_type&;
     using iterator = T*;
@@ -29,6 +26,7 @@ public:
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
     // Constructors
+    // copy & move implicitly defined
     constexpr MyVec() : arr() {}
 
     constexpr MyVec(size_type count, const T& value) : arr() {
@@ -47,15 +45,6 @@ public:
 
     template<std::input_iterator InputIt>
     constexpr MyVec(InputIt first, InputIt last) { insert(0, first, last); }
-
-    constexpr MyVec(const MyVec<T,N>& other) {
-        arr = other.arr;
-        sz = other.sz;
-    }
-
-    constexpr MyVec(MyVec<T,N>&& other) noexcept {
-        swap(other);
-    }
 
     constexpr MyVec(std::initializer_list<T> init) {
         sz = init.size();
@@ -108,7 +97,7 @@ public:
     // Modifiers
     constexpr void clear() noexcept { sz = 0; }
     constexpr iterator insert(const_iterator pos, const T& value) {
-        size_type pos_idx = pos - begin();
+        difference_type pos_idx = pos - begin();
         _insert_check(pos_idx, 1);
         _shift_n_forward(pos_idx, 1);
         ++sz;
@@ -117,7 +106,7 @@ public:
     }
 
     constexpr iterator insert(const_iterator pos, T&& value) {
-        size_type pos_idx = pos - begin();
+        difference_type pos_idx = pos - begin();
         _insert_check(pos_idx, 1);
         _shift_n_forward(pos_idx, 1);
         ++sz;
@@ -126,7 +115,7 @@ public:
     }
 
     constexpr iterator insert(const_iterator pos, size_type count, const T& value) {
-        size_type pos_idx = pos - begin();
+        difference_type pos_idx = pos - begin();
         _insert_check(pos_idx, count);
         _shift_n_forward(pos_idx, count);
         sz += count;
@@ -137,7 +126,7 @@ public:
 
     template<std::input_iterator InputIt>
     constexpr iterator insert(const_iterator pos, InputIt first, InputIt last) {
-        size_type pos_idx = pos - begin();
+        difference_type pos_idx = pos - begin();
         size_type count = 0;
         for (InputIt it = first; it != last; ++it)
             ++count;
@@ -151,7 +140,7 @@ public:
     }
 
     constexpr iterator insert(const_iterator pos, std::initializer_list<T> ilist) {
-        size_type pos_idx = pos - begin();
+        difference_type pos_idx = pos - begin();
         size_type count = ilist.size();
         _insert_check(pos_idx, count);
         _shift_n_forward(pos_idx, count);
@@ -164,7 +153,7 @@ public:
 
     template<class... Args>
     constexpr iterator emplace(const_iterator pos, Args&&... args) {
-        size_type pos_idx = pos - begin();
+        difference_type pos_idx = pos - begin();
         _insert_check(pos_idx, 1);
         _shift_n_forward(pos_idx, 1);
         ++sz;
@@ -173,15 +162,15 @@ public:
     }
 
     constexpr iterator erase(const_iterator pos) {
-        size_type pos_idx = pos - begin();
+        difference_type pos_idx = pos - begin();
         _shift_n_backward(pos_idx, 1);
         --sz;
         return begin() + pos_idx;
     }
 
     constexpr iterator erase(const_iterator first, const_iterator last) {
-        size_type pos_idx = first - begin();
-        size_type count = last - first;
+        difference_type pos_idx = first - begin();
+        difference_type count = last - first;
         _shift_n_backward(pos_idx, count);
         sz -= count;
         return begin() + pos_idx;
@@ -267,5 +256,35 @@ constexpr bool operator==(const MyVec<T,N>& lhs, const MyVec<T,N>& rhs) {
             return false;
     return true;
 }
+
+// TODO: define veclike concept
+// template <typename T, typename U>
+// concept VecLike = std::is_same_v<T, std::vector<U>> || 
+//         std::is_same_v<T, MyVec<U>>;
+
+// Missing: CopyInsertable<T>
+template <class C>
+concept Container = requires(C a, const C b) {
+    requires std::regular<C>;
+    requires std::swappable<C>;
+    requires std::destructible<typename C::value_type>;
+    requires std::equality_comparable<typename C::value_type>;
+
+    requires std::same_as<typename C::reference, typename C::value_type&>;
+    requires std::same_as<typename C::const_reference, const typename C::value_type&>;
+    requires std::forward_iterator<typename C::iterator>;
+    requires std::forward_iterator<typename C::const_iterator>;
+
+};
+
+template<class Vec>
+concept Vector = requires(Vec a, const Vec b) {
+    requires Container<Vec>;
+    requires std::contiguous_iterator<typename Vec::iterator>;
+    requires std::contiguous_iterator<typename Vec::const_iterator>;
+};
+
+//template<class C>
+//concept VecLike = 
 
 #endif  // MY_VECTOR_H_

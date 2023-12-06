@@ -12,10 +12,6 @@
 //     std::cout << "Hello, world!\n";
 // }
 
-// consteval int f(std::array<int, 10> v) {
-//     return std::accumulate(v.begin(), v.end(), 0);
-// }
-
 template <typename T, std::size_t N>
 constexpr MyVec<T, N> populate() {
     MyVec<T, N> v(1);
@@ -27,12 +23,6 @@ constexpr MyVec<T, N> populate() {
     v.insert(v.begin()+3, 10);
     return v;
 }
-
-// constexpr std::vector<int> populate_std() {
-//     std::vector<int> v(1);
-//     v.emplace_back(2);
-//     return v;
-// }
 
 template <typename T, std::size_t N>
 constexpr T accumulate(MyVec<T, N> v) {
