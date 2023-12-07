@@ -55,6 +55,7 @@ concept Erasable = (String<C> && default_erasable<T>)
                 || (!allocator_aware<C> && default_erasable<T>)
                 || (allocator_aware<C> && allocator_erasable<C, T, typename C::allocator_type>);
 
+// concept for https://en.cppreference.com/w/cpp/named_req/CopyInsertable
 template <class C, class T>
 concept CopyInsertable = (String<C> && default_constructible<T>) 
                 || (!allocator_aware<C> && default_constructible<T>)
