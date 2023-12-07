@@ -20,14 +20,16 @@ public:
     using difference_type = std::ptrdiff_t;
     using reference = value_type&;
     using const_reference = const value_type&;
-    using iterator = T*;
-    using const_iterator = const T*;
+    using pointer = value_type*;
+    using const_pointer = const value_type*;
+    using iterator = value_type*;
+    using const_iterator = const value_type*;
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
     // Constructors
     // copy & move implicitly defined
-    constexpr MyVec() : arr() {}
+    constexpr MyVec() noexcept : arr() {}
 
     constexpr MyVec(size_type count, const T& value) : arr() {
         _check_length(count);
@@ -52,6 +54,14 @@ public:
         for (auto it = init.begin(); it != init.end(); ++it)
             arr[i++] = *it;
     }
+
+    // Assign
+    constexpr void assign(size_type count, const T& value) { clear(); insert(begin(), count, value); }
+    
+    template<class InputIt>
+    constexpr void assign(InputIt first, InputIt last) { clear(); insert(begin(), first, last); }
+    
+    constexpr void assign(std::initializer_list<T> ilist) { clear(); insert(begin(), ilist); };
     
     // Element access
     constexpr reference at(size_type pos) {
@@ -70,7 +80,8 @@ public:
     constexpr const_reference front() const { return arr[0]; }
     constexpr reference back() { return arr[sz - 1]; }
     constexpr const_reference back() const { return arr[sz - 1]; }
-    constexpr const T* data() const noexcept { return arr.data(); }
+    constexpr pointer data() noexcept { return arr.data(); }
+    constexpr const pointer data() const noexcept { return arr.data(); }
 
 
     // Iterators
@@ -119,7 +130,7 @@ public:
         _insert_check(pos_idx, count);
         _shift_n_forward(pos_idx, count);
         sz += count;
-        for (int i = 0; i < count; ++i)
+        for (size_type i = 0; i < count; ++i)
             arr[pos_idx + i] = value;
         return begin() + pos_idx;
     }
@@ -145,7 +156,7 @@ public:
         _insert_check(pos_idx, count);
         _shift_n_forward(pos_idx, count);
         sz += count;
-        int i = 0;
+        size_type i = 0;
         for (auto it = ilist.begin(); it != ilist.end(); ++it, ++i)
             arr[pos_idx + i] = *it;
         return begin() + pos_idx;
@@ -257,34 +268,11 @@ constexpr bool operator==(const MyVec<T,N>& lhs, const MyVec<T,N>& rhs) {
     return true;
 }
 
-// TODO: define veclike concept
-// template <typename T, typename U>
-// concept VecLike = std::is_same_v<T, std::vector<U>> || 
-//         std::is_same_v<T, MyVec<U>>;
-
-// Missing: CopyInsertable<T>
-template <class C>
-concept Container = requires(C a, const C b) {
-    requires std::regular<C>;
-    requires std::swappable<C>;
-    requires std::destructible<typename C::value_type>;
-    requires std::equality_comparable<typename C::value_type>;
-
-    requires std::same_as<typename C::reference, typename C::value_type&>;
-    requires std::same_as<typename C::const_reference, const typename C::value_type&>;
-    requires std::forward_iterator<typename C::iterator>;
-    requires std::forward_iterator<typename C::const_iterator>;
-
-};
-
-template<class Vec>
-concept Vector = requires(Vec a, const Vec b) {
-    requires Container<Vec>;
-    requires std::contiguous_iterator<typename Vec::iterator>;
-    requires std::contiguous_iterator<typename Vec::const_iterator>;
-};
-
-//template<class C>
-//concept VecLike = 
+namespace std {
+template<class T, std::size_t N>
+constexpr void swap(MyVec<T,N>& lhs, MyVec<T,N>& rhs) noexcept {
+    lhs.swap(rhs);
+}
+}
 
 #endif  // MY_VECTOR_H_
