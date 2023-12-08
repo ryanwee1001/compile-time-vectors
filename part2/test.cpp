@@ -1,4 +1,5 @@
 #include "my_vector.h"
+#include "vec_concepts.h"
 
 #include <iostream>
 #include <vector>
@@ -61,6 +62,13 @@ void test_constructor_5() {
     MyVec<int, 10> v(5, 2);
     assert(v.size() == 5);
     assert(std::accumulate(v.begin(), v.end(), 0) == 10);
+}
+
+void test_constructor_6() {
+    MyVec<int, 10> v1(5, 2);
+    MyVec<int, 10>& v2 = v1;
+    assert(v2.size() == 5);
+    assert(std::accumulate(v2.begin(), v2.end(), 0) == 10);
 }
 
 void test_iterator_1() {
@@ -261,10 +269,77 @@ void test_comparator_4() {
     assert(v1 > v2);
 }
 
+void test_assign_1() {
+    MyVec<int, 10> v = {1,2,3,4};
+    v.assign(10, 3);
+    assert(std::accumulate(v.begin(), v.end(), 0) == 30);
+    assert(v.size() == 10);
+}
+
+void test_assign_2() {
+    MyVec<int, 10> v1(1);
+    MyVec<int, 10> v2(10, 4);
+    v1.assign(v2.begin(), v2.end());
+    assert(std::accumulate(v1.begin(), v1.end(), 0) == 40);
+    assert(v1.size() == 10);
+}
+
+void test_assign_3() {
+    MyVec<int, 10> v(3);
+    v.assign({1,2,3,4});
+    assert(std::accumulate(v.begin(), v.end(), 0) == 10);
+    assert(v.size() == 4);
+}
+
+constexpr void test_concept_1() {
+    static_assert(Container<std::vector<int>>);
+    static_assert(Container<MyVec<int, 10>>);
+}
+
+constexpr void test_concept_2() {
+    static_assert(String<std::string>);
+    static_assert(String<std::wstring>);
+}
+
+constexpr void test_concept_3() {
+    // Simple value_types
+    static_assert(Vector<std::vector<int>>);
+    static_assert(Vector<MyVec<int, 10>>);
+    static_assert(Vector<std::vector<double>>);
+    static_assert(Vector<MyVec<double, 10>>);
+    static_assert(Vector<std::vector<char>>);
+    static_assert(Vector<MyVec<char, 10>>);
+
+    // "Complex" value_types
+    static_assert(Vector<std::vector<std::vector<int>>>);
+    static_assert(Vector<MyVec<std::vector<std::vector<int>>, 10>>);
+    static_assert(Vector<std::vector<std::vector<std::string>>>);
+    static_assert(Vector<MyVec<std::vector<std::string>, 10>>);
+
+    // Using MyVec as a value_type
+    static_assert(Vector<std::vector<MyVec<int, 10>>>);
+    static_assert(Vector<MyVec<MyVec<int, 10>, 10>>);
+}
+
+struct RandomStruct { int a; };
+
+constexpr void test_concept_4() {
+    static_assert(NaiveVector<std::vector<int>>);
+    static_assert(NaiveVector<MyVec<int, 10>>);
+
+    // Should fail, but doesn't!
+    static_assert(NaiveVector<std::vector<RandomStruct>>);
+    static_assert(NaiveVector<std::vector<void>>);
+
+    // The below is a compile error, as expected.
+    // static_assert(Vector<std::vector<RandomStruct>>);
+    // static_assert(Vector<std::vector<void>>);
+}
+
 int main() {
     test_emplace_back_1(); test_emplace_back_2();
     test_push_back_1();
-    test_constructor_1(); test_constructor_2(); test_constructor_3(); test_constructor_4(); test_constructor_5();
+    test_constructor_1(); test_constructor_2(); test_constructor_3(); test_constructor_4(); test_constructor_5(); test_constructor_6();
     test_iterator_1();
     test_insert_1(); test_insert_2(); test_insert_3(); test_insert_4(); test_insert_5(); 
     test_insert_6(); test_insert_7(); test_insert_8(); test_insert_9();
@@ -273,5 +348,6 @@ int main() {
     test_resize_1(); test_resize_2();
     test_swap_1();
     test_comparator_1(); test_comparator_2(); test_comparator_3(); test_comparator_4();
+    test_assign_1(); test_assign_2(); test_assign_3();
     std::cout << "All tests passed" << std::endl;
 }

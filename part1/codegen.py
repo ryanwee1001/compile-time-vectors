@@ -40,7 +40,7 @@ def data_for_computation() -> List[int]:
 
     ##### CHANGE THE CODE BELOW THIS LINE #####
 
-    num_elems = 2
+    num_elems = 1000
     for _ in range(num_elems):
         l.append(randint(-1e9, 1e9))
 

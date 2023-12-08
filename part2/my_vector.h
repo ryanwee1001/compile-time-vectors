@@ -9,27 +9,28 @@
 #include <utility>
 #include <format>
 #include <iterator>
+#include <concepts>
 
-// TODO: define veclike concept
-// template <typename T, typename U>
-// concept VecLike = std::is_same_v<T, std::vector<U>> || 
-//         std::is_same_v<T, MyVec<U>>;
-
+// No allocator since we are using static memory only
 template <class T, std::size_t N>
 class MyVec {
 public:
     // Member types
     using value_type = T;
     using size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
     using reference = value_type&;
     using const_reference = const value_type&;
-    using iterator = T*;
-    using const_iterator = const T*;
+    using pointer = value_type*;
+    using const_pointer = const value_type*;
+    using iterator = value_type*;
+    using const_iterator = const value_type*;
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
     // Constructors
-    constexpr MyVec() : arr() {}
+    // copy & move implicitly defined
+    constexpr MyVec() noexcept : arr() {}
 
     constexpr MyVec(size_type count, const T& value) : arr() {
         _check_length(count);
@@ -48,21 +49,20 @@ public:
     template<std::input_iterator InputIt>
     constexpr MyVec(InputIt first, InputIt last) { insert(0, first, last); }
 
-    constexpr MyVec(const MyVec<T,N>& other) {
-        arr = other.arr;
-        sz = other.sz;
-    }
-
-    constexpr MyVec(MyVec<T,N>&& other) noexcept {
-        swap(other);
-    }
-
     constexpr MyVec(std::initializer_list<T> init) {
         sz = init.size();
         int i = 0;
         for (auto it = init.begin(); it != init.end(); ++it)
             arr[i++] = *it;
     }
+
+    // Assign
+    constexpr void assign(size_type count, const T& value) { clear(); insert(begin(), count, value); }
+    
+    template<class InputIt>
+    constexpr void assign(InputIt first, InputIt last) { clear(); insert(begin(), first, last); }
+    
+    constexpr void assign(std::initializer_list<T> ilist) { clear(); insert(begin(), ilist); };
     
     // Element access
     constexpr reference at(size_type pos) {
@@ -81,7 +81,8 @@ public:
     constexpr const_reference front() const { return arr[0]; }
     constexpr reference back() { return arr[sz - 1]; }
     constexpr const_reference back() const { return arr[sz - 1]; }
-    constexpr const T* data() const noexcept { return arr.data(); }
+    constexpr pointer data() noexcept { return arr.data(); }
+    constexpr const pointer data() const noexcept { return arr.data(); }
 
 
     // Iterators
@@ -108,7 +109,7 @@ public:
     // Modifiers
     constexpr void clear() noexcept { sz = 0; }
     constexpr iterator insert(const_iterator pos, const T& value) {
-        size_type pos_idx = pos - begin();
+        difference_type pos_idx = pos - begin();
         _insert_check(pos_idx, 1);
         _shift_n_forward(pos_idx, 1);
         ++sz;
@@ -117,7 +118,7 @@ public:
     }
 
     constexpr iterator insert(const_iterator pos, T&& value) {
-        size_type pos_idx = pos - begin();
+        difference_type pos_idx = pos - begin();
         _insert_check(pos_idx, 1);
         _shift_n_forward(pos_idx, 1);
         ++sz;
@@ -126,18 +127,18 @@ public:
     }
 
     constexpr iterator insert(const_iterator pos, size_type count, const T& value) {
-        size_type pos_idx = pos - begin();
+        difference_type pos_idx = pos - begin();
         _insert_check(pos_idx, count);
         _shift_n_forward(pos_idx, count);
         sz += count;
-        for (int i = 0; i < count; ++i)
+        for (size_type i = 0; i < count; ++i)
             arr[pos_idx + i] = value;
         return begin() + pos_idx;
     }
 
     template<std::input_iterator InputIt>
     constexpr iterator insert(const_iterator pos, InputIt first, InputIt last) {
-        size_type pos_idx = pos - begin();
+        difference_type pos_idx = pos - begin();
         size_type count = 0;
         for (InputIt it = first; it != last; ++it)
             ++count;
@@ -151,12 +152,12 @@ public:
     }
 
     constexpr iterator insert(const_iterator pos, std::initializer_list<T> ilist) {
-        size_type pos_idx = pos - begin();
+        difference_type pos_idx = pos - begin();
         size_type count = ilist.size();
         _insert_check(pos_idx, count);
         _shift_n_forward(pos_idx, count);
         sz += count;
-        int i = 0;
+        size_type i = 0;
         for (auto it = ilist.begin(); it != ilist.end(); ++it, ++i)
             arr[pos_idx + i] = *it;
         return begin() + pos_idx;
@@ -164,7 +165,7 @@ public:
 
     template<class... Args>
     constexpr iterator emplace(const_iterator pos, Args&&... args) {
-        size_type pos_idx = pos - begin();
+        difference_type pos_idx = pos - begin();
         _insert_check(pos_idx, 1);
         _shift_n_forward(pos_idx, 1);
         ++sz;
@@ -173,15 +174,15 @@ public:
     }
 
     constexpr iterator erase(const_iterator pos) {
-        size_type pos_idx = pos - begin();
+        difference_type pos_idx = pos - begin();
         _shift_n_backward(pos_idx, 1);
         --sz;
         return begin() + pos_idx;
     }
 
     constexpr iterator erase(const_iterator first, const_iterator last) {
-        size_type pos_idx = first - begin();
-        size_type count = last - first;
+        difference_type pos_idx = first - begin();
+        difference_type count = last - first;
         _shift_n_backward(pos_idx, count);
         sz -= count;
         return begin() + pos_idx;
@@ -266,6 +267,13 @@ constexpr bool operator==(const MyVec<T,N>& lhs, const MyVec<T,N>& rhs) {
         if (lhs[i] != rhs[i])
             return false;
     return true;
+}
+
+namespace std {
+template<class T, std::size_t N>
+constexpr void swap(MyVec<T,N>& lhs, MyVec<T,N>& rhs) noexcept {
+    lhs.swap(rhs);
+}
 }
 
 #endif  // MY_VECTOR_H_
