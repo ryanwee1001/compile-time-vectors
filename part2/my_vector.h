@@ -11,6 +11,7 @@
 #include <iterator>
 #include <concepts>
 
+// No allocator since we are using static memory only
 template <class T, std::size_t N>
 class MyVec {
 public:

@@ -155,6 +155,7 @@ concept Vector = requires(
     { a.pop_back() } -> std::same_as<void>;
     { a.resize(0) } -> std::same_as<void>;
     { a.swap(b) } -> std::same_as<void>;
+    // Non-member functions
     { a <=> b };
     { std::swap(a, b) } -> std::same_as<void>;
 };

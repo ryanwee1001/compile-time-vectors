@@ -321,19 +321,19 @@ constexpr void test_concept_3() {
     static_assert(Vector<MyVec<MyVec<int, 10>, 10>>);
 }
 
-struct RandomStruct {
-    int a;
-};
+struct RandomStruct { int a; };
 
 constexpr void test_concept_4() {
     static_assert(NaiveVector<std::vector<int>>);
     static_assert(NaiveVector<MyVec<int, 10>>);
 
-    // Should fail! 
+    // Should fail, but doesn't!
     static_assert(NaiveVector<std::vector<RandomStruct>>);
+    static_assert(NaiveVector<std::vector<void>>);
 
     // The below is a compile error, as expected.
     // static_assert(Vector<std::vector<RandomStruct>>);
+    // static_assert(Vector<std::vector<void>>);
 }
 
 int main() {
